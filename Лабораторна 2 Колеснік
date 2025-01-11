@@ -1,91 +1,97 @@
 #include <iostream>
 #include <string>
-#include <vector>
+#include <cctype>
+#include <cmath>
+#include <limits>
+#include <algorithm>
 
-// Функція для зсуву Цезаря
-void caesarShift(const std::string& input, int startShift, std::string& output) {
-    output.clear();
-    for (size_t i = 0; i < input.size(); ++i) {
-        char shiftedChar = 'A' + (input[i] - 'A' + startShift + i) % 26;
-        output += shiftedChar;
+// Частоти літер в англійській мові (%)
+const double LETTER_FREQUENCIES[26] = {
+    8.08, 1.67, 3.18, 3.99, 12.56, 2.17, 1.80, 5.27, 7.24, 0.14,
+    0.63, 4.04, 2.60, 7.38, 7.47, 1.91, 0.09, 6.42, 6.59, 9.15,
+    2.79, 1.00, 1.89, 0.21, 1.65, 0.07
+};
+
+// Функція для підрахунку частот символів у тексті
+void computeLetterFrequencies(const std::string& inputText, double letterCounts[26]) {
+    int totalCharacters = 0;
+
+    // Очищення масиву частот
+    std::fill(letterCounts, letterCounts + 26, 0.0);
+
+    // Підрахунок кількості кожної літери
+    for (char ch : inputText) {
+        if (std::isalpha(ch)) {
+            ch = std::tolower(ch);
+            letterCounts[ch - 'a']++;
+            totalCharacters++;
+        }
+    }
+
+    // Перетворення кількостей у відсотки
+    if (totalCharacters > 0) {
+        for (int i = 0; i < 26; i++) {
+            letterCounts[i] = (letterCounts[i] / totalCharacters) * 100.0;
+        }
     }
 }
 
-// Функція для зворотного зсуву Цезаря
-void reverseCaesarShift(const std::string& input, int startShift, std::string& output) {
-    output.clear();
-    for (size_t i = 0; i < input.size(); ++i) {
-        char shiftedChar = 'A' + (input[i] - 'A' - (startShift + i) + 26) % 26;
-        output += shiftedChar;
+// Функція для розрахунку відхилення частот (менше значення — краще)
+double computeDeviation(const double letterCounts[26]) {
+    double deviationScore = 0.0;
+
+    for (int i = 0; i < 26; i++) {
+        deviationScore += std::pow(letterCounts[i] - LETTER_FREQUENCIES[i], 2);
     }
+
+    return deviationScore;
 }
 
-// Функція для підстановки через ротор
-void mapWithRotor(const std::string& input, const std::string& rotor, std::string& output) {
-    output.clear();
-    for (char ch : input) {
-        output += rotor[ch - 'A'];
-    }
-}
+// Функція для розшифровки тексту з конкретним зсувом
+void shiftAndDecode(const std::string& inputText, std::string& outputText, int shiftValue) {
+    outputText = inputText; // Копіюємо текст
 
-// Функція для зворотної підстановки через ротор
-void reverseMapWithRotor(const std::string& input, const std::string& rotor, std::string& output) {
-    output.clear();
-    for (char ch : input) {
-        size_t index = rotor.find(ch);
-        output += 'A' + index;
+    for (size_t i = 0; i < inputText.length(); ++i) {
+        char currentChar = inputText[i];
+        if (std::isalpha(currentChar)) {
+            char alphabetStart = std::islower(currentChar) ? 'a' : 'A';
+            outputText[i] = (currentChar - alphabetStart - shiftValue + 26) % 26 + alphabetStart; // Застосування зсуву
+        }
     }
 }
 
 int main() {
-    // Введення
-    std::string mode;
-    int startShift;
-    std::string rotor1, rotor2, rotor3;
-    std::string message;
+    // Введення закодованого тексту
+    std::string encryptedMessage;
+    std::getline(std::cin, encryptedMessage);
 
-    std::cin >> mode;       // ENCODE або DECODE
-    std::cin >> startShift; // Початковий зсув
-    std::cin >> rotor1 >> rotor2 >> rotor3;
-    std::cin >> message;
+    // Змінні для пошуку найкращого результату
+    std::string optimalDecodedText;
+    double lowestDeviation = std::numeric_limits<double>::max();
+    double frequencyArray[26];
 
-    std::string result;
+    // Перебір усіх можливих зсувів (від 0 до 25)
+    for (int shiftValue = 0; shiftValue < 26; ++shiftValue) {
+        std::string tempDecodedText;
 
-    if (mode == "ENCODE") {
-        std::string step1, step2, step3;
+        // Розшифровуємо текст із поточним зсувом
+        shiftAndDecode(encryptedMessage, tempDecodedText, shiftValue);
 
-        // Крок 1: Зсув Цезаря
-        caesarShift(message, startShift, step1);
+        // Розраховуємо частоти літер у розшифрованому тексті
+        computeLetterFrequencies(tempDecodedText, frequencyArray);
 
-        // Крок 2: Підстановка через перший ротор
-        mapWithRotor(step1, rotor1, step2);
+        // Оцінюємо текст на основі відхилення частот
+        double deviation = computeDeviation(frequencyArray);
 
-        // Крок 3: Підстановка через другий ротор
-        mapWithRotor(step2, rotor2, step3);
-
-        // Крок 4: Підстановка через третій ротор
-        mapWithRotor(step3, rotor3, result);
-    } else if (mode == "DECODE") {
-        std::string step1, step2, step3;
-
-        // Крок 1: Зворотна підстановка через третій ротор
-        reverseMapWithRotor(message, rotor3, step1);
-
-        // Крок 2: Зворотна підстановка через другий ротор
-        reverseMapWithRotor(step1, rotor2, step2);
-
-        // Крок 3: Зворотна підстановка через перший ротор
-        reverseMapWithRotor(step2, rotor1, step3);
-
-        // Крок 4: Зворотний зсув Цезаря
-        reverseCaesarShift(step3, startShift, result);
-    } else {
-        std::cerr << "Invalid mode. Use ENCODE or DECODE." << std::endl;
-        return 1;
+        // Якщо поточне відхилення краще, зберігаємо цей результат
+        if (deviation < lowestDeviation) {
+            lowestDeviation = deviation;
+            optimalDecodedText = tempDecodedText;
+        }
     }
 
-    // Виведення результату
-    std::cout << result << std::endl;
+    // Виведення найкращого розшифрованого тексту
+    std::cout << optimalDecodedText << std::endl;
 
     return 0;
 }
