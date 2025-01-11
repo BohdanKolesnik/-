@@ -1,0 +1,71 @@
+#include <iostream>
+#include <unordered_map>
+#include <cmath>
+#include <cstdint>
+
+// Функція для швидкого піднесення до степеня за модулем
+__int128_t mod_exp(__int128_t base, __int128_t exp, __int128_t mod) {
+    __int128_t result = 1;
+    base %= mod;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = (result * base) % mod;
+        }
+        exp /= 2;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+// Алгоритм Baby-step Giant-step для розв'язання дискретного логарифму
+long long baby_step_giant_step(long long G, long long H, long long Q) {
+    // Визначаємо розмір кроку m
+    long long m = static_cast<long long>(std::sqrt(Q)) + 1;
+
+    // Baby-step: створюємо таблицю G^j % Q для j = 0, 1, ..., m-1
+    std::unordered_map<__int128_t, long long> value_map;
+    for (long long j = 0; j < m; ++j) {
+        __int128_t value = mod_exp(G, j, Q);
+        value_map[value] = j;
+    }
+
+    // Giant-step: обчислення G^(-m) % Q
+    __int128_t Gm_inv = mod_exp(mod_exp(G, m, Q), Q - 2, Q); // G^(-m) % Q
+
+    // Шукаємо розв'язок
+    __int128_t cur_value = H;
+    for (long long i = 0; i < m; ++i) {
+        if (value_map.find(cur_value) != value_map.end()) {
+            long long j = value_map[cur_value];
+            return i * m + j; // Рішення: X = i * m + j
+        }
+        // Оновлюємо значення для наступного Giant-step
+        cur_value = (cur_value * Gm_inv) % Q;
+    }
+
+    return -1; // Якщо розв'язок не знайдено
+}
+
+int main() {
+    // Введення даних
+    long long G, H, Q;
+    std::cin >> G >> H >> Q;
+
+    // Перевірка коректності введених даних
+    if (Q <= 1) {
+        std::cerr << "Модуль Q має бути більше 1." << std::endl;
+        return 1;
+    }
+
+    // Обчислення секретного ключа
+    long long secret_key = baby_step_giant_step(G, H, Q);
+
+    // Виведення результату
+    if (secret_key != -1) {
+        std::cout << secret_key << std::endl; // Тільки число
+    } else {
+        std::cout << "Розв'язок не знайдено." << std::endl;
+    }
+
+    return 0;
+}
