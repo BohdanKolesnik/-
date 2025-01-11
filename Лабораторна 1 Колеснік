@@ -1,0 +1,114 @@
+#include <iostream>
+#include <string>
+
+// Функція для виконання зсуву за алгоритмом Цезаря із зростаючим значенням
+void applyCaesarShift(const std::string &input, int initialShift, std::string &output) {
+    output.resize(input.size());
+    for (size_t i = 0; i < input.size(); i++) {
+        if (input[i] >= 'A' && input[i] <= 'Z') { // Перевіряємо, що символ у межах 'A'-'Z'
+            int shift = initialShift + i;
+            output[i] = 'A' + (input[i] - 'A' + shift) % 26;
+        } else {
+            output[i] = input[i]; // Нешифровані символи залишаються без змін
+        }
+    }
+}
+
+// Функція для виконання зворотного зсуву Цезаря зі зменшенням значення
+void undoCaesarShift(const std::string &input, int initialShift, std::string &output) {
+    output.resize(input.size());
+    for (size_t i = 0; i < input.size(); i++) {
+        if (input[i] >= 'A' && input[i] <= 'Z') { // Перевіряємо, що символ у межах 'A'-'Z'
+            int shift = initialShift + i;
+            output[i] = 'A' + (input[i] - 'A' - shift + 26) % 26;
+            if (output[i] < 'A') { // Коригуємо для від'ємних значень
+                output[i] += 26;
+            }
+        } else {
+            output[i] = input[i]; // Нешифровані символи залишаються без змін
+        }
+    }
+}
+
+// Функція для мапування символів через ротор
+void encodeWithRotor(const std::string &input, const std::string &rotor, std::string &output) {
+    output.resize(input.size());
+    for (size_t i = 0; i < input.size(); i++) {
+        if (input[i] >= 'A' && input[i] <= 'Z') { // Перевіряємо, що символ у межах 'A'-'Z'
+            int index = input[i] - 'A';
+            output[i] = rotor[index];
+        } else {
+            output[i] = input[i]; // Нешифровані символи залишаються без змін
+        }
+    }
+}
+
+// Функція для зворотного мапування символів через ротор
+void decodeWithRotor(const std::string &input, const std::string &rotor, std::string &output) {
+    output.resize(input.size());
+    for (size_t i = 0; i < input.size(); i++) {
+        if (input[i] >= 'A' && input[i] <= 'Z') { // Перевіряємо, що символ у межах 'A'-'Z'
+            for (int j = 0; j < 26; j++) {
+                if (rotor[j] == input[i]) {
+                    output[i] = 'A' + j;
+                    break;
+                }
+            }
+        } else {
+            output[i] = input[i]; // Нешифровані символи залишаються без змін
+        }
+    }
+}
+
+int main() {
+    std::string operation; // ENCODE або DECODE
+    int initialShift;      // Початкове значення зсуву
+    std::string rotorA, rotorB, rotorC; // Ротори
+    std::string inputMessage;          // Повідомлення для обробки
+
+    // Зчитуємо вхідні дані
+    std::cin >> operation;
+    std::cin >> initialShift;
+    std::cin >> rotorA >> rotorB >> rotorC;
+    std::cin >> inputMessage;
+
+    std::string finalResult;
+
+    if (operation == "ENCODE") {
+        // Процес кодування
+        std::string step1, step2, step3;
+
+        // Крок 1: Застосовуємо зсув Цезаря
+        applyCaesarShift(inputMessage, initialShift, step1);
+
+        // Крок 2: Мапуємо через перший ротор
+        encodeWithRotor(step1, rotorA, step2);
+
+        // Крок 3: Мапуємо через другий ротор
+        encodeWithRotor(step2, rotorB, step3);
+
+        // Крок 4: Мапуємо через третій ротор
+        encodeWithRotor(step3, rotorC, finalResult);
+
+    } else if (operation == "DECODE") {
+        // Процес декодування
+        std::string step1, step2, step3;
+
+        // Крок 1: Зворотне мапування через третій ротор
+        decodeWithRotor(inputMessage, rotorC, step1);
+
+        // Крок 2: Зворотне мапування через другий ротор
+        decodeWithRotor(step1, rotorB, step2);
+
+        // Крок 3: Зворотне мапування через перший ротор
+        decodeWithRotor(step2, rotorA, step3);
+
+        // Крок 4: Зворотній зсув Цезаря
+        undoCaesarShift(step3, initialShift, finalResult);
+    }
+
+    // Виводимо результат
+    std::cout << finalResult << std::endl;
+
+    return 0;
+}
