@@ -1,0 +1,67 @@
+using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+
+class AESCFBExample
+{
+    static void Main()
+    {
+        // Ініціалізація AES-алгоритму
+        using (Aes aesAlgorithm = Aes.Create())
+        {
+            aesAlgorithm.Mode = CipherMode.CFB; // Установка режиму CFB
+            aesAlgorithm.Key = new byte[32]
+            {
+                0x9f, 0xbd, 0xe6, 0x4f, 0xad, 0xe1, 0xf3, 0x9d,
+                0x5e, 0x53, 0x7f, 0xbb, 0x92, 0x96, 0x85, 0x10,
+                0x9f, 0xbd, 0xe6, 0x4f, 0xad, 0xe1, 0xf3, 0x9d,
+                0x5e, 0x53, 0x7f, 0xbb, 0x92, 0x96, 0x85, 0x10
+            };
+            aesAlgorithm.IV = new byte[16]
+            {
+                0xd7, 0xc9, 0xc5, 0xaf, 0x7f, 0xd1, 0xe8, 0x9e,
+                0x83, 0xbe, 0x8c, 0xa9, 0xac, 0x7e, 0xd0, 0x00
+            };
+
+            string originalMessage = "CFB mode encryption in action!";
+
+            // Виконання шифрування
+            byte[] encryptedMessage = PerformEncryption(aesAlgorithm, originalMessage);
+            Console.WriteLine("Зашифрований текст (у вигляді байтів):");
+            Console.WriteLine(BitConverter.ToString(encryptedMessage));
+
+            // Виконання дешифрування
+            string decryptedMessage = PerformDecryption(aesAlgorithm, encryptedMessage);
+            Console.WriteLine("\nРозшифрований текст:");
+            Console.WriteLine(decryptedMessage);
+        }
+    }
+
+    static byte[] PerformEncryption(Aes aes, string plainText)
+    {
+        // Конвертація вхідного тексту у байти
+        byte[] inputBytes = Encoding.UTF8.GetBytes(plainText);
+
+        // Налаштування потоків для шифрування
+        using (MemoryStream memoryStream = new MemoryStream())
+        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateEncryptor(), CryptoStreamMode.Write))
+        {
+            cryptoStream.Write(inputBytes, 0, inputBytes.Length);
+            cryptoStream.FlushFinalBlock();
+            return memoryStream.ToArray();
+        }
+    }
+
+    static string PerformDecryption(Aes aes, byte[] cipherBytes)
+    {
+        // Налаштування потоків для дешифрування
+        using (MemoryStream memoryStream = new MemoryStream(cipherBytes))
+        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Read))
+        {
+            byte[] outputBytes = new byte[cipherBytes.Length];
+            int bytesRead = cryptoStream.Read(outputBytes, 0, outputBytes.Length);
+            return Encoding.UTF8.GetString(outputBytes, 0, bytesRead);
+        }
+    }
+}
