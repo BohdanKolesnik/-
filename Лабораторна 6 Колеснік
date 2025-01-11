@@ -1,0 +1,53 @@
+const char *scanner(int q[21][21]) {
+    // Масив для зберігання результату після обробки
+    static char decodedData[10];
+    int currentByte = 0;  // Змінна для формування байта
+    int col = 20;         // Початкова колонка
+    int row = 19;         // Початковий рядок
+    int charIndex = 0;    // Індекс для запису в decodedData
+    int bitCounter = 1;   // Лічильник зчитаних бітів
+    int toggleState = 1;  // Інверсія стану для декодування
+
+    // Обробка верхньої частини QR-коду (row = 19 до row = 9)
+    while (--row > 8) {
+        currentByte |= (!toggleState ^ q[row][col - 1]) | ((toggleState ^ q[row][col]) << 1); // Додати 2 біти
+        if (bitCounter++ % 4 == 0) {  // Після 4 бітів
+            decodedData[charIndex++] = currentByte;  // Записати символ
+            currentByte = 0;                         // Скинути байт
+        }
+        currentByte <<= 2;  // Зрушення для наступних бітів
+        toggleState ^= 1;   // Змінити стан
+    }
+
+    toggleState ^= 1;  // Інверсія стану
+    col -= 2;          // Переміститися до наступної пари колонок
+
+    // Обробка нижньої частини QR-коду (row = 9 до row = 20)
+    while (++row < 21) {
+        currentByte |= (!toggleState ^ q[row][col - 1]) | ((toggleState ^ q[row][col]) << 1);
+        if (bitCounter++ % 4 == 0) {
+            decodedData[charIndex++] = currentByte;
+            currentByte = 0;
+        }
+        currentByte <<= 2;
+        toggleState ^= 1;
+    }
+
+    toggleState ^= 1;
+    col -= 2;
+
+    // Обробка середньої частини QR-коду (row = 20 до row = 11)
+    while (row-- > 11) {
+        currentByte |= (!toggleState ^ q[row][col - 1]) | ((toggleState ^ q[row][col]) << 1);
+        if (bitCounter++ % 4 == 0) {
+            decodedData[charIndex++] = currentByte;
+            currentByte = 0;
+        }
+        currentByte <<= 2;
+        toggleState ^= 1;
+    }
+
+    // Завершення: додати символ кінця рядка
+    decodedData[1 + decodedData[0]] = '\0';
+    return decodedData + 1;
+}
