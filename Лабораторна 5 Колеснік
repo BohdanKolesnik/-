@@ -1,0 +1,39 @@
+#include <stdexcept>
+#include <string>
+
+// Реалізація функції кодування
+std::string encode(const std::string& message) {
+    std::string encodedBits;
+    for (char symbol : message) {
+        for (int bitIndex = 7; bitIndex >= 0; --bitIndex) {
+            bool bit = (symbol >> bitIndex) & 1;
+            encodedBits += bit ? "111" : "000";
+        }
+    }
+    return encodedBits;
+}
+
+// Реалізація функції декодування
+std::string decode(const std::string& encodedBits) {
+    if (encodedBits.length() % 24 != 0) {
+        throw std::invalid_argument("Encoded data length must be divisible by 24.");
+    }
+
+    std::string decodedMessage;
+    for (size_t i = 0; i < encodedBits.length(); i += 24) {
+        char decodedChar = 0;
+        for (int bitGroup = 0; bitGroup < 8; ++bitGroup) {
+            int onesCount = 0, zeroesCount = 0;
+            for (int repetition = 0; repetition < 3; ++repetition) {
+                char bit = encodedBits[i + bitGroup * 3 + repetition];
+                if (bit == '1') ++onesCount;
+                else if (bit == '0') ++zeroesCount;
+                else throw std::invalid_argument("Invalid character in encoded data.");
+            }
+            decodedChar = (decodedChar << 1) | (onesCount > zeroesCount ? 1 : 0);
+        }
+        decodedMessage += decodedChar;
+    }
+
+    return decodedMessage;
+}
