@@ -1,0 +1,91 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+// Функція для зсуву Цезаря
+void caesarShift(const std::string& input, int startShift, std::string& output) {
+    output.clear();
+    for (size_t i = 0; i < input.size(); ++i) {
+        char shiftedChar = 'A' + (input[i] - 'A' + startShift + i) % 26;
+        output += shiftedChar;
+    }
+}
+
+// Функція для зворотного зсуву Цезаря
+void reverseCaesarShift(const std::string& input, int startShift, std::string& output) {
+    output.clear();
+    for (size_t i = 0; i < input.size(); ++i) {
+        char shiftedChar = 'A' + (input[i] - 'A' - (startShift + i) + 26) % 26;
+        output += shiftedChar;
+    }
+}
+
+// Функція для підстановки через ротор
+void mapWithRotor(const std::string& input, const std::string& rotor, std::string& output) {
+    output.clear();
+    for (char ch : input) {
+        output += rotor[ch - 'A'];
+    }
+}
+
+// Функція для зворотної підстановки через ротор
+void reverseMapWithRotor(const std::string& input, const std::string& rotor, std::string& output) {
+    output.clear();
+    for (char ch : input) {
+        size_t index = rotor.find(ch);
+        output += 'A' + index;
+    }
+}
+
+int main() {
+    // Введення
+    std::string mode;
+    int startShift;
+    std::string rotor1, rotor2, rotor3;
+    std::string message;
+
+    std::cin >> mode;       // ENCODE або DECODE
+    std::cin >> startShift; // Початковий зсув
+    std::cin >> rotor1 >> rotor2 >> rotor3;
+    std::cin >> message;
+
+    std::string result;
+
+    if (mode == "ENCODE") {
+        std::string step1, step2, step3;
+
+        // Крок 1: Зсув Цезаря
+        caesarShift(message, startShift, step1);
+
+        // Крок 2: Підстановка через перший ротор
+        mapWithRotor(step1, rotor1, step2);
+
+        // Крок 3: Підстановка через другий ротор
+        mapWithRotor(step2, rotor2, step3);
+
+        // Крок 4: Підстановка через третій ротор
+        mapWithRotor(step3, rotor3, result);
+    } else if (mode == "DECODE") {
+        std::string step1, step2, step3;
+
+        // Крок 1: Зворотна підстановка через третій ротор
+        reverseMapWithRotor(message, rotor3, step1);
+
+        // Крок 2: Зворотна підстановка через другий ротор
+        reverseMapWithRotor(step1, rotor2, step2);
+
+        // Крок 3: Зворотна підстановка через перший ротор
+        reverseMapWithRotor(step2, rotor1, step3);
+
+        // Крок 4: Зворотний зсув Цезаря
+        reverseCaesarShift(step3, startShift, result);
+    } else {
+        std::cerr << "Invalid mode. Use ENCODE or DECODE." << std::endl;
+        return 1;
+    }
+
+    // Виведення результату
+    std::cout << result << std::endl;
+
+    return 0;
+}
