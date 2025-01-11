@@ -1,0 +1,39 @@
+#include <openssl/md5.h> // Підключаємо бібліотеку OpenSSL для роботи з MD5
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+// Функція для доповнення рядка провідними нулями до заданої довжини
+std::string toLength(const std::string& input, int desiredLength) {
+    if (input.size() >= desiredLength) {
+        return input; // Якщо рядок вже достатньої довжини, повертаємо його без змін
+    }
+    return std::string(desiredLength - input.size(), '0') + input; // Додаємо потрібну кількість нулів
+}
+
+// Функція для зламу MD5-хешу методом грубої сили
+std::string crack(const std::string& hash) {
+    unsigned char hashBuffer[MD5_DIGEST_LENGTH]; // Буфер для збереження MD5-хешу
+    char formattedHash[MD5_DIGEST_LENGTH * 2 + 1] = {}; // Масив для збереження хешу у вигляді шістнадцяткового рядка
+
+    // Перебір усіх можливих п'ятизначних PIN-кодів від 00000 до 99999
+    for (int pin = 0; pin <= 99999; ++pin) {
+        // Формуємо PIN-код, додаючи провідні нулі
+        std::string candidatePin = toLength(std::to_string(pin), 5);
+
+        // Обчислюємо MD5-хеш для поточного PIN-коду
+        MD5(reinterpret_cast<const unsigned char*>(candidatePin.c_str()), candidatePin.size(), hashBuffer);
+
+        // Перетворюємо MD5-хеш у шістнадцятковий формат
+        for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+            sprintf(formattedHash + i * 2, "%02x", hashBuffer[i]);
+        }
+
+        // Порівнюємо обчислений хеш із цільовим
+        if (hash == std::string(formattedHash)) {
+            return candidatePin; // Якщо збіг знайдено, повертаємо поточний PIN-код
+        }
+    }
+
+    return ""; // Якщо збіг не знайдено, повертаємо порожній рядок
+}
